@@ -2,6 +2,28 @@
 
 A GitHub Action to automatically bump and tag master, on merge, with the latest SemVer formatted version. Works on any platform.
 
+## Requirements
+
+This action runs on the **Node.js 24** Actions runtime (`runs.using: node24`
+in [`action.yml`](./action.yml)). GitHub-hosted runners have shipped with
+Node 24 since late 2025; self-hosted runners must be on runner version
+`v2.328.0` or newer. The action is built as native ESM — the compiled
+`lib/main.js` entrypoint is an ES module, matching the package's
+`"type": "module"` declaration — so every dependency in the
+(`@actions/*`, `@octokit/*`, `@semantic-release/*`,
+`conventional-changelog-conventionalcommits`) graph loads cleanly with
+Node 24's native ESM loader. No additional setup is needed in consumer
+workflows — GitHub executes the bundled `lib/main.js` entrypoint directly.
+
+### Developing locally
+
+- Install: `npm ci` (public `registry.npmjs.org` only; see `.npmrc`).
+- Test: `npm test` (runs [Vitest](https://vitest.dev) against the TS source).
+- Watch tests: `npm run test:watch`.
+- Lint: `npm run lint` (ESLint 9 flat config + typescript-eslint strict + stylistic).
+- Format: `npm run format` / `npm run check`.
+- Build: `npm run build` (emits native-ESM `lib/*.js` via `tsc`).
+
 ## Usage
 
 ```yaml
@@ -14,7 +36,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: Bump version and push tag
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1

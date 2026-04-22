@@ -1,6 +1,7 @@
+import { describe, it } from 'vitest';
 import yaml from 'js-yaml';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export function setRepository(
   GITHUB_SERVER_URL: string,

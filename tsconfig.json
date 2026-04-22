@@ -1,11 +1,33 @@
 {
+  // NOTE: We emit native ESM (`module: NodeNext`) because the runtime deps
+  // `@actions/core`, `@actions/exec`, and the `@semantic-release/*` / Octokit
+  // package trees are all pure ESM in their latest majors and only expose an
+  // `"import"` condition in their `exports` maps. A CJS emit paired with
+  // `require(esm)` on Node 24 fails for those packages because `require()`
+  // cannot satisfy an `import`-only `exports` condition.
+  //
+  // `package.json` sets `"type": "module"`, so the emitted `.js` files under
+  // `lib/` are ESM modules. Relative imports therefore need explicit `.js`
+  // extensions in source (`NodeNext` rule).
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",                     /* Concatenate and emit output to single file. */
-    "outDir": "./lib",                        /* Redirect output structure to the directory. */
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "outDir": "./lib",
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "declaration": false,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "include": ["src/**/*", "types/**/*"],
+  "exclude": ["node_modules", "lib", "**/*.test.ts"]
 }
