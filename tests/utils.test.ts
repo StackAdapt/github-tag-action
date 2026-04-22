@@ -1,11 +1,35 @@
-import * as utils from '../src/utils';
-import { getValidTags } from '../src/utils';
-import * as core from '@actions/core';
-import * as github from '../src/github';
-import { defaultChangelogRules } from '../src/defaults';
+import { describe, expect, it, vi } from 'vitest';
+import type * as CoreModule from '@actions/core';
+import type * as GithubModule from '../src/github.js';
+import * as utils from '../src/utils.js';
+import { getValidTags } from '../src/utils.js';
+import * as github from '../src/github.js';
+import { defaultChangelogRules } from '../src/defaults.js';
 
-jest.spyOn(core, 'debug').mockImplementation(() => {});
-jest.spyOn(core, 'warning').mockImplementation(() => {});
+// `@actions/core` is a real ESM package, so Node seals its namespace object
+// and `vi.spyOn(core, ...)` cannot replace the exports in place. We therefore
+// replace the whole module with a factory-produced plain object that keeps
+// the original implementations but replaces the logging functions with
+// silent `vi.fn()` stubs.
+vi.mock('@actions/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof CoreModule>();
+  return {
+    ...actual,
+    debug: vi.fn(),
+    warning: vi.fn(),
+  };
+});
+
+// Same reasoning as in `action.test.ts`: ESM named imports are live
+// bindings, so individual tests mutate `github.listTags` via
+// `vi.mocked(...)` rather than `vi.spyOn(...)`.
+vi.mock('../src/github.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof GithubModule>();
+  return {
+    ...actual,
+    listTags: vi.fn(actual.listTags),
+  };
+});
 
 const regex = /^v/;
 
@@ -64,8 +88,8 @@ describe('utils', () => {
         node_id: 'string',
       },
     ];
-    const mockListTags = jest
-      .spyOn(github, 'listTags')
+    const mockListTags = vi
+      .mocked(github.listTags)
       .mockImplementation(async () => testTags);
 
     /*
@@ -114,8 +138,8 @@ describe('utils', () => {
         node_id: 'string',
       },
     ];
-    const mockListTags = jest
-      .spyOn(github, 'listTags')
+    const mockListTags = vi
+      .mocked(github.listTags)
       .mockImplementation(async () => testTags);
 
     /*
@@ -163,8 +187,8 @@ describe('utils', () => {
         node_id: 'string',
       },
     ];
-    const mockListTags = jest
-      .spyOn(github, 'listTags')
+    const mockListTags = vi
+      .mocked(github.listTags)
       .mockImplementation(async () => testTags);
     /*
      * When

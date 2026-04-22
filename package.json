@@ -1,13 +1,21 @@
 {
   "name": "github-tag-action",
-  "version": "6.1.0",
+  "version": "7.0.0",
   "private": true,
+  "type": "module",
   "description": "A GitHub Action to automatically bump and tag master, on merge, with the latest SemVer formatted version.",
   "main": "lib/main.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "tsc",
-    "test": "jest --testTimeout 10000",
-    "check": "prettier --check ."
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "prettier --check .",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -21,25 +29,25 @@
   "author": "Mathieu Dutour",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/exec": "^1.1.0",
-    "@actions/github": "^4.0.0",
-    "@semantic-release/commit-analyzer": "^8.0.1",
-    "@semantic-release/release-notes-generator": "^9.0.1",
-    "conventional-changelog-conventionalcommits": "^4.6.1",
-    "semver": "^7.3.5"
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
+    "semver": "^7.7.4"
   },
   "devDependencies": {
-    "@octokit/rest": "^18.12.0",
-    "@types/jest": "^27.0.2",
-    "@types/js-yaml": "^4.0.4",
-    "@types/node": "^16.11.7",
-    "@types/semver": "^7.3.9",
-    "jest": "^27.3.1",
-    "jest-circus": "^27.3.1",
+    "@eslint/js": "^9.14.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.0.0",
+    "@types/semver": "^7.5.8",
+    "eslint": "^9.14.0",
+    "globals": "^15.12.0",
     "js-yaml": "^4.1.0",
-    "prettier": "2.4.1",
-    "ts-jest": "^27.0.7",
-    "typescript": "^4.4.4"
+    "prettier": "^3.6.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.14.0",
+    "vitest": "^4.1.5"
   }
 }

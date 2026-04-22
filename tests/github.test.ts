@@ -1,12 +1,16 @@
-import { listTags } from '../src/github';
+import { describe, expect, it, vi } from 'vitest';
+import { listTags } from '../src/github.js';
 
-jest.mock(
-  '@actions/github',
-  jest.fn().mockImplementation(() => ({
-    context: { repo: { owner: 'mock-owner', repo: 'mock-repo' } },
-    getOctokit: jest.fn().mockReturnValue({
+// Vitest statically hoists `vi.mock(...)` calls above every static
+// `import` in the file, so the factory below is registered before
+// `../src/github.js` is evaluated even though it appears afterwards
+// textually.
+vi.mock('@actions/github', () => ({
+  context: { repo: { owner: 'mock-owner', repo: 'mock-repo' } },
+  getOctokit: vi.fn().mockReturnValue({
+    rest: {
       repos: {
-        listTags: jest.fn().mockImplementation(({ page }: { page: number }) => {
+        listTags: vi.fn().mockImplementation(({ page }: { page: number }) => {
           if (page === 6) {
             return { data: [] };
           }
@@ -22,9 +26,9 @@ jest.mock(
           return { data: res };
         }),
       },
-    }),
-  }))
-);
+    },
+  }),
+}));
 
 describe('github', () => {
   it('returns all tags', async () => {
@@ -40,10 +44,10 @@ describe('github', () => {
     });
   });
 
-  it('returns only the last 100 tags', async () => {
-    const tags = await listTags(true);
+  it('returns only the first page when shouldFetchAllTags is false', async () => {
+    const tags = await listTags(false);
 
-    expect(tags.length).toEqual(500);
+    expect(tags.length).toEqual(100);
     expect(tags[99]).toEqual({
       name: 'v0.0.99',
       commit: { sha: 'string', url: 'string' },
