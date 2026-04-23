@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import { gte, inc, parse, valid, type ReleaseType } from 'semver';
 import { analyzeCommits } from '@semantic-release/commit-analyzer';
 import { generateNotes } from '@semantic-release/release-notes-generator';
+import conventionalCommitsPreset from 'conventional-changelog-conventionalcommits';
 import {
   getBranchFromRef,
   isPr,
@@ -138,7 +139,11 @@ export default async function main() {
             }))
           : undefined,
       },
-      { commits, logger: { log: console.info.bind(console) } }
+      {
+        commits,
+        cwd: process.cwd(),
+        logger: { log: console.info.bind(console) },
+      }
     );
 
     // Determine if we should continue with tag creation based on main vs prerelease branch
@@ -207,15 +212,22 @@ export default async function main() {
   core.info(`New tag after applying prefix is ${newTag}.`);
   core.setOutput('new_tag', newTag);
 
+  // Pre-resolve the preset so esbuild can bundle it. Passing
+  // `preset: 'conventionalcommits'` would trigger a dynamic
+  // `import-from-esm` lookup that fails on the Actions runner
+  // where no `node_modules` directory exists.
+  const resolvedPreset = conventionalCommitsPreset({
+    types: mergeWithDefaultChangelogRules(mappedReleaseRules),
+  });
+
   const changelog = await generateNotes(
     {
-      preset: 'conventionalcommits',
-      presetConfig: {
-        types: mergeWithDefaultChangelogRules(mappedReleaseRules),
-      },
+      parserOpts: resolvedPreset.parser,
+      writerOpts: resolvedPreset.writer,
     },
     {
       commits,
+      cwd: process.cwd(),
       logger: { log: console.info.bind(console) },
       options: {
         repositoryUrl: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}`,
