@@ -216,6 +216,14 @@ export default async function main() {
   // `preset: 'conventionalcommits'` would trigger a dynamic
   // `import-from-esm` lookup that fails on the Actions runner
   // where no `node_modules` directory exists.
+  //
+  // Note: upstream `load-changelog-config.js` only reads
+  // `loadedConfig.commits` (never merging a plugin-supplied `commits`
+  // field), so when no `preset` / `config` is passed `commitOpts`
+  // always comes from the angular default preset. That is harmless
+  // today — angular and conventionalcommits both default to
+  // `{ ignore: undefined, merges: false }` — but is worth knowing if
+  // those defaults ever diverge upstream.
   const resolvedPreset = conventionalCommitsPreset({
     types: mergeWithDefaultChangelogRules(mappedReleaseRules),
   });

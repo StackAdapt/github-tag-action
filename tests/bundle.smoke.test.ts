@@ -54,7 +54,8 @@ interface ChildResult {
  * Drain stdout/stderr asynchronously while the child runs so large
  * bursts of startup output can't deadlock the parent. Always resolves
  * (never rejects) so the caller can assert on the captured streams even
- * if the child crashed, exited non-zero, or had to be SIGKILLed.
+ * if the child crashed, exited non-zero, had to be SIGKILLed, or failed
+ * to spawn in the first place.
  */
 function runChildAndCapture(
   child: ChildProcess,
@@ -63,21 +64,39 @@ function runChildAndCapture(
   return new Promise((resolve) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
+    let settled = false;
+
+    const finish = (overrides: Partial<ChildResult>): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({
+        stdout: Buffer.concat(stdoutChunks).toString('utf8'),
+        stderr: Buffer.concat(stderrChunks).toString('utf8'),
+        status: null,
+        signal: null,
+        ...overrides,
+      });
+    };
+
     child.stdout?.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
     child.stderr?.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
+
+    // If spawn itself fails (e.g. ENOENT for the node binary), Node emits
+    // `error` and never a `close`. Fold the error into stderr so the
+    // caller still sees a useful message instead of hanging until the
+    // SIGKILL timer fires.
+    child.on('error', (err) => {
+      stderrChunks.push(Buffer.from(`\n${String(err)}\n`));
+      finish({});
+    });
 
     const timer = setTimeout(() => {
       child.kill('SIGKILL');
     }, timeoutMs);
 
     child.on('close', (status, signal) => {
-      clearTimeout(timer);
-      resolve({
-        stdout: Buffer.concat(stdoutChunks).toString('utf8'),
-        stderr: Buffer.concat(stderrChunks).toString('utf8'),
-        status,
-        signal,
-      });
+      finish({ status, signal });
     });
   });
 }
@@ -209,8 +228,18 @@ describe('bundled action artefact', () => {
     };
 
     const server = createServer(handleRequest);
-    await new Promise<void>((resolve) => {
-      server.listen(0, '127.0.0.1', resolve);
+    await new Promise<void>((resolve, reject) => {
+      // Without an `error` listener, a failed `listen` (e.g. EADDRINUSE
+      // on a constrained CI host) would never reject and the test would
+      // silently hang until vitest's test timeout.
+      const onError = (err: Error): void => {
+        reject(err);
+      };
+      server.once('error', onError);
+      server.listen(0, '127.0.0.1', () => {
+        server.off('error', onError);
+        resolve();
+      });
     });
 
     try {
