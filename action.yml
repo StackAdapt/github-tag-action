@@ -7,7 +7,9 @@ outputs:
   new_version:
     description: 'Generated tag without the prefix'
   previous_tag:
-    description: 'Previous tag (or `0.0.0`)'
+    description: 'Previous tag. When no tag exists yet, defaults to a synthetic `{tag_prefix}0.0.0` (e.g. `v0.0.0`).'
+  previous_version:
+    description: 'Previous tag without the `tag_prefix` (e.g. `0.0.0` when no tag exists yet).'
   release_type:
     description: 'The computed release type (`major`, `minor`, `patch` or `custom` - can be prefixed with `pre`)'
   changelog:
@@ -38,11 +40,11 @@ inputs:
     description: 'Comma separated list of release rules. Format: `<keyword>:<release_type>`. Example: `hotfix:patch,pre-feat:preminor`.'
     required: false
   release_branches:
-    description: 'Comma separated list of branches (bash reg exp accepted) that will generate the release tags. Other branches and pull-requests generate versions postfixed with the commit hash and do not generate any tag. Examples: `master` or `.*` or `release.*,hotfix.*,master`...'
+    description: 'Comma separated list of branches (JavaScript regular expression accepted, matched via `String.prototype.match`) that will generate release tags. On any other branch — and on pull requests — the action logs "Skipping the tag creation" and exits without pushing a tag. Examples: `master` or `.*` or `release.*,hotfix.*,master`...'
     required: false
     default: 'master,main'
   pre_release_branches:
-    description: 'Comma separated list of branches (bash reg exp accepted) that will generate pre-release tags.'
+    description: 'Comma separated list of branches (JavaScript regular expression accepted, matched via `String.prototype.match`) that will generate pre-release tags.'
     required: false
   commit_sha:
     description: 'The commit SHA value to add the tag. If specified, it uses this value instead GITHUB_SHA. It could be useful when a previous step merged a branch into github.ref.'

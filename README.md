@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Bump version and push tag
         id: tag_version
-        uses: mathieudutour/github-tag-action@v6.1
+        uses: StackAdapt/github-tag-action@v7.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Create a GitHub release
@@ -61,7 +61,7 @@ jobs:
 
 #### Filter branches
 
-- **release_branches** _(optional)_ - Comma separated list of branches (JavaScript regular expression accepted) that will generate the release tags. Other branches and pull-requests generate versions postfixed with the commit hash and do not generate any repository tag. Examples: `master` or `.*` or `release.*,hotfix.*,master`... (default: `master,main`).
+- **release_branches** _(optional)_ - Comma separated list of branches (JavaScript regular expression accepted) that will generate release tags. On any other branch (and on pull requests) the action logs "Skipping the tag creation" and exits without tagging the repository — no commit-hash-postfixed versions are computed or emitted. Examples: `master` or `.*` or `release.*,hotfix.*,master`... (default: `master,main`).
 - **pre_release_branches** _(optional)_ - Comma separated list of branches (JavaScript regular expression accepted) that will generate the pre-release tags.
 
 #### Customize the tag
@@ -91,8 +91,8 @@ jobs:
 
 - **new_tag** - The value of the newly calculated tag. Note that if there hasn't been any new commit, this will be `undefined`.
 - **new_version** - The value of the newly created tag without the prefix. Note that if there hasn't been any new commit, this will be `undefined`.
-- **previous_tag** - The value of the previous tag (or `v0.0.0` if none). Note that if `custom_tag` is set, this will be `undefined`.
-- **previous_version** - The value of the previous tag (or `0.0.0` if none) without the prefix. Note that if `custom_tag` is set, this will be `undefined`.
+- **previous_tag** - The value of the previous tag. When no tag exists yet, defaults to a synthetic `{tag_prefix}0.0.0` (e.g. `v0.0.0` with the default prefix). Note that if `custom_tag` is set, this will be `undefined`.
+- **previous_version** - The value of the previous tag without the prefix (e.g. `0.0.0` when no tag exists yet). Note that if `custom_tag` is set, this will be `undefined`.
 - **release_type** - The computed release type (`major`, `minor`, `patch` or `custom` - can be prefixed with `pre`).
 - **changelog** - The [conventional changelog](https://github.com/conventional-changelog/conventional-changelog) since the previous tag.
 
