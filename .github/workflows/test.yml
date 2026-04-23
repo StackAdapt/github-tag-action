@@ -22,4 +22,17 @@ jobs:
       # surfaces missing-file / bundler-config regressions before the
       # (slower) full Vitest suite runs.
       - run: npm run build
+      # Guard against committed-bundle drift: GitHub's Actions runner
+      # executes the `lib/main.js` that is *checked in*, not whatever CI
+      # rebuilds. Without this check a PR could change `src/` + rebuild
+      # locally, commit only the `src/` change, and still pass CI while
+      # shipping a stale bundle to every consumer. `git diff --exit-code`
+      # fails the job if the freshly-built bundle diverges from the
+      # committed one, forcing the author to commit the rebuild.
+      - name: Ensure lib/main.js is up to date with src/
+        run: |
+          if ! git diff --exit-code -- lib/; then
+            echo "::error::\`lib/main.js\` is stale. Run \`npm run build\` locally and commit the updated bundle."
+            exit 1
+          fi
       - run: npm test
