@@ -31,6 +31,22 @@ interface ReleaseRule {
   readonly scope?: string;
 }
 
+declare module 'conventional-changelog-conventionalcommits' {
+  interface PresetConfig {
+    types?: readonly { type: string; section?: string; hidden?: boolean }[];
+    [key: string]: unknown;
+  }
+
+  interface Preset {
+    commits: { ignore: unknown; merges: boolean };
+    parser: Record<string, unknown>;
+    writer: Record<string, unknown>;
+    whatBump: (...args: unknown[]) => unknown;
+  }
+
+  export default function createPreset(config?: PresetConfig): Preset;
+}
+
 declare module '@semantic-release/commit-analyzer' {
   export function analyzeCommits(
     config: {
@@ -42,6 +58,7 @@ declare module '@semantic-release/commit-analyzer' {
     },
     args: {
       commits: readonly Commit[];
+      cwd?: string;
       logger: Logger;
     }
   ): Promise<string | undefined>;
@@ -59,6 +76,7 @@ declare module '@semantic-release/release-notes-generator' {
     },
     args: {
       commits: readonly Commit[];
+      cwd?: string;
       logger: Logger;
       options: {
         repositoryUrl: string;
