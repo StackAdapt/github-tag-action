@@ -23,16 +23,30 @@ jobs:
       # (slower) full Vitest suite runs.
       - run: npm run build
       # Guard against committed-bundle drift: GitHub's Actions runner
-      # executes the `lib/main.js` that is *checked in*, not whatever CI
+      # executes whatever is *checked in* under `lib/`, not whatever CI
       # rebuilds. Without this check a PR could change `src/` + rebuild
       # locally, commit only the `src/` change, and still pass CI while
-      # shipping a stale bundle to every consumer. `git diff --exit-code`
-      # fails the job if the freshly-built bundle diverges from the
-      # committed one, forcing the author to commit the rebuild.
-      - name: Ensure lib/main.js is up to date with src/
+      # shipping a stale bundle to every consumer.
+      #
+      # Two complementary checks:
+      #   1. `git diff --exit-code -- lib/` catches modifications to
+      #      tracked files (today: `lib/main.js`).
+      #   2. `git ls-files --others --exclude-standard -- lib/` catches
+      #      brand-new untracked files the bundler might start emitting
+      #      (e.g. sourcemaps, additional chunks) that a future `src/`
+      #      change could introduce without the author noticing.
+      - name: Ensure lib/ is up to date with src/
         run: |
+          git diff --stat -- lib/ || true
           if ! git diff --exit-code -- lib/; then
-            echo "::error::\`lib/main.js\` is stale. Run \`npm run build\` locally and commit the updated bundle."
+            echo "::error::Files under \`lib/\` are stale. Run \`npm run build\` locally and commit the updated bundle."
+            exit 1
+          fi
+          untracked=$(git ls-files --others --exclude-standard -- lib/)
+          if [ -n "$untracked" ]; then
+            echo "::error::The build produced new files under \`lib/\` that are not committed:"
+            printf '  %s\n' $untracked
+            echo "::error::Commit the new artefact(s) or add them to \`.gitignore\`."
             exit 1
           fi
       - run: npm test
