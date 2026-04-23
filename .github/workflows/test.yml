@@ -17,5 +17,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run check
-      - run: npm test
+      # Build before test: the bundle-smoke test in `tests/` loads the
+      # compiled `lib/main.js`, and running `npm run build` first also
+      # surfaces missing-file / bundler-config regressions before the
+      # (slower) full Vitest suite runs.
       - run: npm run build
+      - run: npm test
